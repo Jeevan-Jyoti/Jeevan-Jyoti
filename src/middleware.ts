@@ -6,12 +6,12 @@ const isPublicRoute = createRouteMatcher([
   "/unauthorized",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware((auth, req) => {
   if (!isPublicRoute(req)) {
-    await auth.protect();
+    auth.protect();
   }
 });
 
 export const config = {
-  matcher: ["/((?!_next|...).*)"],
+  matcher: ["/((?!_next|favicon.ico|...).*)"],
 };
