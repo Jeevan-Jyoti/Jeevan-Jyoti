@@ -1,51 +1,100 @@
 "use client";
 
-import { useAddPurchaseModal } from "@/lib/modalStore";
 import { useMedicineStore } from "@/lib/stores/medicineStore";
+import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
-import { Trash2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-type MedicineEntry = {
+interface MedicineEntry {
   name: string;
   category: string;
   quantity: string;
   price: number;
-};
+}
 
-export default function AddPurchaseModal() {
-  const { isOpen, close } = useAddPurchaseModal();
+interface Purchase {
+  _id: string;
+  customerName: string;
+  medicines: {
+    name: string;
+    category: string;
+    quantity: number;
+    price: number;
+  }[];
+  discount: number;
+  totalPrice: number;
+  dueAmount: number;
+  paymentMode: "cash" | "online";
+}
+
+interface EditPurchaseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  purchase: Purchase | null;
+  onUpdate: () => void;
+}
+
+export default function EditPurchaseModal({
+  isOpen,
+  onClose,
+  purchase,
+  onUpdate,
+}: EditPurchaseModalProps) {
   const { medicines, fetchAllMedicines } = useMedicineStore();
-
   const [step, setStep] = useState<1 | 2>(1);
   const [customerName, setCustomerName] = useState("");
   const [medicineList, setMedicineList] = useState<MedicineEntry[]>([]);
-  const [discount, setDiscount] = useState("");
-  const [paymentMode, setPaymentMode] = useState<"cash" | "online">("cash");
-  const [dueAmount, setDueAmount] = useState("");
-
-  const [currentMed, setCurrentMed] = useState({
+  const [currentMed, setCurrentMed] = useState<MedicineEntry>({
     name: "",
     quantity: "",
     price: 0,
     category: "",
   });
+  const [discount, setDiscount] = useState("");
+  const [paymentMode, setPaymentMode] = useState<"cash" | "online">("cash");
+  const [dueAmount, setDueAmount] = useState("");
 
   useEffect(() => {
-    if (isOpen) fetchAllMedicines();
+    if (isOpen) {
+      fetchAllMedicines();
+    }
   }, [isOpen, fetchAllMedicines]);
 
   useEffect(() => {
-    const matched = medicines.find((m) => m.name === currentMed.name);
-    if (matched) {
+    if (purchase) {
+      setCustomerName(purchase.customerName);
+      setMedicineList(
+        purchase.medicines.map((m) => ({
+          name: m.name,
+          quantity: m.quantity.toString(),
+          price: m.price,
+          category: m.category,
+        }))
+      );
+      setDiscount(purchase.discount.toString());
+      setDueAmount(purchase.dueAmount.toString());
+      setPaymentMode(purchase.paymentMode);
+      setStep(1);
+      setCurrentMed({ name: "", quantity: "", price: 0, category: "" });
+    }
+  }, [purchase]);
+
+  useEffect(() => {
+    const match = medicines.find((m) => m.name === currentMed.name);
+    if (match) {
       setCurrentMed((prev) => ({
         ...prev,
-        category: matched.category,
-        price: matched.price,
+        category: match.category,
+        price: match.price,
       }));
     } else {
-      setCurrentMed((prev) => ({ ...prev, category: "", price: 0 }));
+      setCurrentMed((prev) => ({
+        ...prev,
+        category: "",
+        price: 0,
+      }));
     }
   }, [currentMed.name, medicines]);
 
@@ -61,117 +110,84 @@ export default function AddPurchaseModal() {
     return sum + qty * m.price;
   }, 0);
 
-  const resetForm = () => {
-    setStep(1);
-    setCustomerName("");
-    setMedicineList([]);
-    setCurrentMed({ name: "", quantity: "", price: 0, category: "" });
-    setDiscount("");
-    setPaymentMode("cash");
-    setDueAmount("");
-  };
-
   const handleAddMedicine = () => {
     if (
       !currentMed.name ||
       currentMed.quantity.trim() === "" ||
       isNaN(parseInt(currentMed.quantity)) ||
-      parseInt(currentMed.quantity) <= 0 ||
-      currentMed.price < 0
+      parseInt(currentMed.quantity) <= 0
     )
       return;
 
-    setMedicineList((prev) => [
-      ...prev,
-      {
-        name: currentMed.name,
-        category: currentMed.category,
-        quantity: currentMed.quantity,
-        price: currentMed.price,
-      },
-    ]);
-
+    setMedicineList([...medicineList, currentMed]);
     setCurrentMed({ name: "", quantity: "", price: 0, category: "" });
   };
 
   const handleRemoveMedicine = (index: number) => {
-    setMedicineList((prev) => prev.filter((_, i) => i !== index));
+    setMedicineList(medicineList.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
-    const discountNum = parseFloat(discount) || 0;
-    const dueAmountNum = parseFloat(dueAmount) || 0;
+    if (!purchase) return;
 
-    const purchase = {
+    const updated: Purchase = {
+      ...purchase,
       customerName,
       medicines: medicineList.map((m) => ({
         name: m.name,
         category: m.category,
         quantity: parseInt(m.quantity),
-        price: parseFloat(m.price.toFixed(2)),
+        price: m.price,
       })),
+      discount: parseFloat(discount) || 0,
       totalPrice,
-      discount: discountNum,
       paymentMode,
-      dueAmount: dueAmountNum,
+      dueAmount: parseFloat(dueAmount) || 0,
     };
 
     try {
-      const res = await fetch("/api/purchases", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(purchase),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error("Error: " + err.error);
-        return;
-      }
-
-      toast.success("Saved successfully");
-      await fetchAllMedicines();
-      resetForm();
-      close();
-    } catch (e) {
-      console.error("Error submitting purchase:", e);
-      toast.error("Something went wrong.");
+      await axios.put(`/api/purchases/${purchase._id}`, updated);
+      toast.success("Purchase updated");
+      onUpdate();
+      onClose();
+    } catch (err) {
+      toast.error("Failed to update purchase");
+      console.error(err);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !purchase) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full p-6 relative">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center p-4">
+      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
         <button
+          onClick={onClose}
           className="absolute right-4 top-4 text-gray-500 hover:text-red-500 cursor-pointer"
-          onClick={() => {
-            close();
-            resetForm();
-          }}
+          aria-label="Close"
+          title="Close"
         >
-          <X className="w-5 h-5" />
+          <X />
         </button>
 
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 50 }}
+              exit={{ opacity: 0, x: 30 }}
               transition={{ duration: 0.3 }}
               className="space-y-4"
             >
-              <h2 className="text-xl font-semibold">New Purchase - Step 1</h2>
+              <h2 className="text-lg font-semibold">Edit Purchase - Step 1</h2>
 
               <input
                 type="text"
-                className="w-full border rounded px-3 py-2"
-                placeholder="Enter customer name"
+                className="w-full border px-3 py-2 rounded"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Customer Name"
               />
 
               <div className="border p-4 rounded bg-gray-50 space-y-2">
@@ -180,7 +196,7 @@ export default function AddPurchaseModal() {
                   <div className="relative col-span-1">
                     <input
                       type="text"
-                      className="border px-3 py-2 rounded w-full"
+                      className="w-full border px-3 py-2 rounded"
                       placeholder="Medicine name"
                       value={currentMed.name}
                       onChange={(e) =>
@@ -189,16 +205,17 @@ export default function AddPurchaseModal() {
                       autoComplete="off"
                     />
                     {suggestions.length > 0 && (
-                      <ul className="absolute z-50 bg-white border mt-1 rounded text-sm max-h-28 overflow-y-auto shadow-lg w-full">
+                      <ul className="absolute bg-white border z-50 rounded mt-1 max-h-32 overflow-y-auto text-sm shadow w-full">
                         {suggestions.slice(0, 5).map((m, idx) => (
                           <li
                             key={idx}
                             className="px-3 py-1 hover:bg-gray-100 cursor-pointer"
                             onClick={() =>
                               setCurrentMed({
-                                ...currentMed,
                                 name: m.name,
                                 quantity: "",
+                                price: m.price,
+                                category: m.category,
                               })
                             }
                           >
@@ -211,8 +228,8 @@ export default function AddPurchaseModal() {
 
                   <input
                     type="text"
-                    className="border px-3 py-2 rounded"
                     placeholder="Quantity"
+                    className="border px-3 py-2 rounded"
                     value={currentMed.quantity}
                     onChange={(e) =>
                       setCurrentMed({
@@ -224,7 +241,7 @@ export default function AddPurchaseModal() {
 
                   <input
                     type="text"
-                    className="border px-3 py-2 rounded bg-gray-200 cursor-not-allowed"
+                    className="border px-3 py-2 rounded bg-gray-200"
                     placeholder="Price"
                     value={currentMed.price.toFixed(2)}
                     disabled
@@ -232,43 +249,39 @@ export default function AddPurchaseModal() {
                 </div>
 
                 <button
-                  className="text-sm bg-green-600 text-white px-3 py-1 rounded mt-2 hover:bg-green-700 cursor-pointer"
                   onClick={handleAddMedicine}
+                  className="mt-2 px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 text-sm cursor-pointer"
                 >
                   Add Medicine
                 </button>
               </div>
 
               {medicineList.length > 0 && (
-                <div className="text-sm text-gray-700">
-                  <h4 className="font-medium mt-3">Medicines Added:</h4>
-                  <ul className="mt-1 space-y-1">
-                    {medicineList.map((med, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center justify-between border p-2 rounded"
+                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
+                  {medicineList.map((m, i) => (
+                    <li key={i} className="flex justify-between items-center">
+                      <span>
+                        {m.name} ({m.category}) - {m.quantity} × ₹
+                        {m.price.toFixed(2)} = ₹
+                        {(parseInt(m.quantity) * m.price).toFixed(2)}
+                      </span>
+                      <button
+                        onClick={() => handleRemoveMedicine(i)}
+                        className="text-red-600 hover:underline text-xs ml-3 cursor-pointer"
+                        aria-label={`Remove ${m.name}`}
+                        title={`Remove ${m.name}`}
                       >
-                        <span>
-                          {med.name} ({med.category}) - {med.quantity} × ₹
-                          {med.price.toFixed(2)} = ₹
-                          {(parseInt(med.quantity) * med.price).toFixed(2)}
-                        </span>
-                        <button
-                          className="text-red-500 hover:text-red-700 ml-2 cursor-pointer"
-                          onClick={() => handleRemoveMedicine(i)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
 
-              <div className="flex justify-end">
+              <div className="flex justify-end mt-2">
                 <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer"
                   onClick={() => setStep(2)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
                 >
                   Next
                 </button>
@@ -279,30 +292,28 @@ export default function AddPurchaseModal() {
           {step === 2 && (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, x: 50 }}
+              initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
+              exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.3 }}
               className="space-y-4"
             >
-              <h2 className="text-xl font-semibold">
-                Finalize Purchase - Step 2
-              </h2>
+              <h2 className="text-lg font-semibold">Finalize Edit</h2>
 
-              <p className="text-gray-700 text-sm">
-                <strong>Total Price:</strong> ₹{totalPrice.toFixed(2)}
+              <p className="text-gray-700">
+                <strong>Total:</strong> ₹{totalPrice.toFixed(2)}
               </p>
 
               <input
                 type="number"
-                className="w-full border rounded px-3 py-2"
-                placeholder="Discount (₹)"
+                placeholder="Discount"
+                className="w-full border px-3 py-2 rounded"
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
               />
 
               <select
-                className="w-full border rounded px-3 py-2"
+                className="w-full border px-3 py-2 rounded"
                 value={paymentMode}
                 onChange={(e) =>
                   setPaymentMode(e.target.value as "cash" | "online")
@@ -314,25 +325,24 @@ export default function AddPurchaseModal() {
 
               <input
                 type="number"
-                className="w-full border rounded px-3 py-2"
-                placeholder="Due Amount (₹)"
+                placeholder="Due Amount"
+                className="w-full border px-3 py-2 rounded"
                 value={dueAmount}
                 onChange={(e) => setDueAmount(e.target.value)}
               />
 
               <div className="flex justify-between mt-4">
                 <button
-                  className="px-4 py-2 border border-gray-400 rounded text-gray-700 hover:bg-gray-100 cursor-pointer"
                   onClick={() => setStep(1)}
+                  className="px-4 py-2 rounded border hover:bg-gray-100 cursor-pointer"
                 >
                   Back
                 </button>
-
                 <button
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 cursor-pointer"
                   onClick={handleSubmit}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
                 >
-                  Submit
+                  Save Changes
                 </button>
               </div>
             </motion.div>

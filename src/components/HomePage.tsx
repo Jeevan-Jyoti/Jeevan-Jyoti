@@ -1,5 +1,6 @@
 "use client";
 
+import EditPurchaseModal from "@/components/EditPurchaseModal";
 import { useAddPurchaseModal } from "@/lib/modalStore";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
@@ -28,11 +29,12 @@ interface Purchase {
 
 export default function HomePage() {
   const { user } = useUser();
-  const { open } = useAddPurchaseModal();
+  const { open: openAddPurchase } = useAddPurchaseModal();
   const isAdmin = user?.username === "abhay";
 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [editPurchase, setEditPurchase] = useState<Purchase | null>(null);
 
   const fetchPurchases = async () => {
     try {
@@ -53,6 +55,8 @@ export default function HomePage() {
   const today = new Date();
   const isTodaySelected = isToday(selectedDate);
   const maxDate = format(today, "yyyy-MM-dd");
+
+  const totalAmountForDay = purchases.reduce((sum, p) => sum + p.totalPrice, 0);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -85,7 +89,10 @@ export default function HomePage() {
                 {purchase.customerName}
               </h2>
               {isAdmin && (
-                <button className="text-sm text-blue-600 hover:underline flex items-center gap-1 cursor-pointer">
+                <button
+                  onClick={() => setEditPurchase(purchase)}
+                  className="text-sm text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                >
                   <PencilLine className="w-4 h-4" />
                   Edit
                 </button>
@@ -124,7 +131,7 @@ export default function HomePage() {
 
         {isTodaySelected && (
           <div
-            onClick={open}
+            onClick={openAddPurchase}
             className="flex items-center justify-center border-2 border-dashed border-green-500 rounded-xl p-4 text-green-600 hover:bg-green-50 hover:cursor-pointer transition"
           >
             <PlusCircle className="w-5 h-5 mr-1" />
@@ -132,6 +139,19 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {purchases.length > 0 && (
+        <div className="mt-6 text-xl font-semibold text-gray-800 text-right">
+          Total Purchase: ₹{totalAmountForDay.toFixed(2)}
+        </div>
+      )}
+
+      <EditPurchaseModal
+        isOpen={!!editPurchase}
+        onClose={() => setEditPurchase(null)}
+        purchase={editPurchase}
+        onUpdate={fetchPurchases}
+      />
     </div>
   );
 }

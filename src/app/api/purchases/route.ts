@@ -4,24 +4,35 @@ import { connectDB } from "@/lib/mongodb";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  await connectDB();
-  const dateParam = req.nextUrl.searchParams.get("date");
-  const date = dateParam ? new Date(dateParam) : new Date();
+  try {
+    await connectDB();
 
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(date);
-  end.setHours(23, 59, 59, 999);
+    const dateParam = req.nextUrl.searchParams.get("date");
+    const date = dateParam ? new Date(dateParam) : new Date();
 
-  const purchases = await Customer.find({
-    date: { $gte: start, $lte: end },
-  }).sort({ date: -1 });
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
 
-  return NextResponse.json(purchases);
+    const purchases = await Customer.find({
+      date: { $gte: start, $lte: end },
+    }).sort({ date: -1 });
+
+    return NextResponse.json(purchases);
+  } catch (error) {
+    console.error("Error fetching purchases:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch purchases", details: error },
+      { status: 500 }
+    );
+  }
 }
+
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
+
     const { customerName, medicines, discount, paymentMode, dueAmount } =
       await req.json();
 
@@ -59,6 +70,7 @@ export async function POST(req: NextRequest) {
       discount,
       paymentMode,
       dueAmount,
+      date: new Date(),
     });
 
     return NextResponse.json({ message: "Purchase added", data: customer });
