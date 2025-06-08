@@ -1,9 +1,10 @@
 "use client";
 
 import { useMedicineStore } from "@/lib/stores/medicineStore";
-import { useUser } from "@clerk/nextjs";
+import { SignedIn, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Navbar from "./Navbar";
 
 const allowedUsernames = ["abhay", "clerk-01", "clerk-02"];
 
@@ -39,5 +40,12 @@ export default function ProtectedPage({
     );
   }
 
-  return <main className="px-4 py-6">{children}</main>;
+  return (
+    <main className="px-4 py-6">
+      <SignedIn>
+        <Navbar />
+      </SignedIn>
+      {children}
+    </main>
+  );
 }

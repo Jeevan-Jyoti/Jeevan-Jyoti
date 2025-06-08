@@ -1,5 +1,4 @@
 import AddMedicineModal from "@/components/AddMedicineModal";
-import Navbar from "@/components/Navbar";
 import ProtectedPage from "@/components/ProtectedPage";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
@@ -34,7 +33,6 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <ProtectedPage>
-            <Navbar />
             <AddMedicineModal />
             <Toaster richColors position="top-center" />
             {children}
