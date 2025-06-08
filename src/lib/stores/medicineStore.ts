@@ -1,7 +1,7 @@
 import axios from "axios";
 import { create } from "zustand";
 
-interface Medicine {
+export interface Medicine {
   name: string;
   category: string;
   price: number;
@@ -10,14 +10,17 @@ interface Medicine {
 
 interface MedicineStore {
   medicines: Medicine[];
-  fetchMedicines: () => Promise<void>;
+  fetchAllMedicines: () => Promise<void>;
   setMedicines: (data: Medicine[]) => void;
   addOrUpdateMedicine: (newMed: Medicine) => void;
+  updateMedicineQuantity: (name: string, change: number) => void;
+  resetMedicineStore: () => void;
 }
 
 export const useMedicineStore = create<MedicineStore>((set) => ({
   medicines: [],
-  fetchMedicines: async () => {
+
+  fetchAllMedicines: async () => {
     try {
       const res = await axios.get("/api/medicines");
       set({ medicines: res.data });
@@ -25,16 +28,33 @@ export const useMedicineStore = create<MedicineStore>((set) => ({
       console.error("Failed to fetch medicines", error);
     }
   },
+
   setMedicines: (data) => set({ medicines: data }),
+
   addOrUpdateMedicine: (newMed) =>
     set((state) => {
+      const existingIndex = state.medicines.findIndex(
+        (med) => med.name === newMed.name
+      );
       const updated = [...state.medicines];
-      const index = updated.findIndex((med) => med.name === newMed.name);
-      if (index !== -1) {
-        updated[index] = { ...updated[index], ...newMed };
+      if (existingIndex !== -1) {
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          ...newMed,
+        };
       } else {
         updated.push(newMed);
       }
       return { medicines: updated };
     }),
+
+  updateMedicineQuantity: (name, change) =>
+    set((state) => {
+      const updated = state.medicines.map((med) =>
+        med.name === name ? { ...med, quantity: med.quantity + change } : med
+      );
+      return { medicines: updated };
+    }),
+
+  resetMedicineStore: () => set({ medicines: [] }),
 }));

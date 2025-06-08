@@ -18,7 +18,7 @@ export default function ProtectedPage({
 
   useEffect(() => {
     if (isLoaded && user && allowedUsernames.includes(user.username || "")) {
-      useMedicineStore.getState().fetchMedicines();
+      useMedicineStore.getState().fetchAllMedicines();
     }
   }, [isLoaded, user]);
 

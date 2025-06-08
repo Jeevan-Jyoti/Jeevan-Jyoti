@@ -1,4 +1,5 @@
 import AddMedicineModal from "@/components/AddMedicineModal";
+import AddPurchaseModal from "@/components/AddPurchaseModal";
 import ProtectedPage from "@/components/ProtectedPage";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
@@ -34,6 +35,7 @@ export default function RootLayout({
         <ClerkProvider>
           <ProtectedPage>
             <AddMedicineModal />
+            <AddPurchaseModal />
             <Toaster richColors position="top-center" />
             {children}
           </ProtectedPage>

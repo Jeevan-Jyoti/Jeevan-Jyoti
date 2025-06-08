@@ -1,6 +1,6 @@
 "use client";
 
-import { useAddMedicineModal } from "@/lib/modalStore";
+import { useAddMedicineModal, useAddPurchaseModal } from "@/lib/modalStore";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { Home, Menu, Pill, PlusCircle, ShieldPlus, X } from "lucide-react";
 import Link from "next/link";
@@ -9,7 +9,8 @@ import { useState } from "react";
 const Navbar = () => {
   const { user } = useUser();
   const isAdmin = user?.username === "abhay";
-  const { open } = useAddMedicineModal();
+  const { open: openAddMedicine } = useAddMedicineModal();
+  const { open: openAddPurchase } = useAddPurchaseModal();
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -24,13 +25,12 @@ const Navbar = () => {
       >
         <Home size={18} /> Home
       </Link>
-      <Link
-        href="/add-purchase"
-        onClick={closeMenu}
-        className="flex items-center gap-2 hover:text-green-700"
+      <button
+        onClick={openAddPurchase}
+        className="flex items-center gap-2 hover:text-green-700 cursor-pointer"
       >
         <PlusCircle size={18} /> Add Purchase
-      </Link>
+      </button>
       <Link
         href="/medicines"
         onClick={closeMenu}
@@ -40,7 +40,7 @@ const Navbar = () => {
       </Link>
       {isAdmin && (
         <button
-          onClick={open}
+          onClick={openAddMedicine}
           className="flex items-center gap-2 hover:text-green-700 cursor-pointer"
         >
           <ShieldPlus size={18} /> Add Data
@@ -50,7 +50,7 @@ const Navbar = () => {
   );
 
   return (
-    <nav className="w-full bg-white border-b border-gray-200 shadow-sm">
+    <nav className="w-full bg-teal-50/60 border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex flex-col">
           <span className="text-2xl font-bold text-green-700">
@@ -65,7 +65,7 @@ const Navbar = () => {
           <UserButton afterSignOutUrl="/" />
         </div>
         <button
-          className="md:hidden p-2"
+          className="md:hidden p-2 cursor-pointer"
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
         >
@@ -74,13 +74,17 @@ const Navbar = () => {
       </div>
 
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-64 bg-teal-50 shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
           menuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b">
           <span className="text-lg font-semibold text-green-700">Menu</span>
-          <button onClick={closeMenu} aria-label="Close menu">
+          <button
+            className="cursor-pointer"
+            onClick={closeMenu}
+            aria-label="Close menu"
+          >
             <X size={24} />
           </button>
         </div>

@@ -11,3 +11,9 @@ export const useAddMedicineModal = create<ModalState>((set) => ({
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
 }));
+
+export const useAddPurchaseModal = create<ModalState>((set) => ({
+  isOpen: false,
+  open: () => set({ isOpen: true }),
+  close: () => set({ isOpen: false }),
+}));
