@@ -34,9 +34,7 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <ProtectedPage>
-            <SignedIn>
-              <Navbar />
-            </SignedIn>
+            <Navbar />
             <AddMedicineModal />
             <Toaster richColors position="top-center" />
             {children}
