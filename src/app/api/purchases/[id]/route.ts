@@ -70,11 +70,11 @@ export async function PUT(
     existingPurchase.dueAmount = dueAmount;
     await existingPurchase.save();
 
-    return NextResponse.json({ message: "Purchase updated" });
+    return NextResponse.json({ message: "Purchase updated successfully" });
   } catch (error) {
     console.error("Error updating purchase:", error);
     return NextResponse.json(
-      { error: "Internal Server Error", details: error },
+      { error: "Internal Server Error", details: String(error) },
       { status: 500 }
     );
   }
