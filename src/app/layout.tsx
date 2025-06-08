@@ -1,7 +1,7 @@
 import AddMedicineModal from "@/components/AddMedicineModal";
 import Navbar from "@/components/Navbar";
 import ProtectedPage from "@/components/ProtectedPage";
-import { ClerkProvider, SignedIn } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
