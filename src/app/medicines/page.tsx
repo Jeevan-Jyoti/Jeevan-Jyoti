@@ -1,6 +1,5 @@
 "use client";
 
-import AddMedicineModal from "@/components/AddMedicineModal";
 import { useAddMedicineModal } from "@/lib/modalStore";
 import { useMedicineStore } from "@/lib/stores/medicineStore";
 import { Medicine } from "@/types/medicine";
