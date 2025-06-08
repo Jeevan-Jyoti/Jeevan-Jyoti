@@ -70,7 +70,7 @@ export default function HomePage() {
           max={maxDate}
           onChange={(e) => {
             const newDate = new Date(e.target.value);
-            if (!isAfter(newDate, today)) {
+            if (!isAfter(newDate, today) || isToday(newDate)) {
               setSelectedDate(newDate);
             }
           }}
