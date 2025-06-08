@@ -1,5 +1,7 @@
+// eslint-disable-next-line no-var
 declare global {
-  let mongoose: {
+  // eslint-disable-next-line no-var
+  var mongoose: {
     conn: typeof import("mongoose") | null;
     promise: Promise<typeof import("mongoose")> | null;
   };
