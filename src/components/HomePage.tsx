@@ -58,11 +58,18 @@ export default function HomePage() {
 
   const totalAmountForDay = purchases.reduce((sum, p) => sum + p.totalPrice, 0);
 
+  const istSelectedDate = selectedDate.toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">
-          Purchases on {format(selectedDate, "dd MMM yyyy")}
+          Purchases on {istSelectedDate}
         </h1>
         <input
           type="date"
@@ -79,55 +86,69 @@ export default function HomePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {purchases.map((purchase) => (
-          <div
-            key={purchase._id}
-            className="border rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-lg font-semibold text-gray-800">
-                {purchase.customerName}
-              </h2>
-              {isAdmin && (
-                <button
-                  onClick={() => setEditPurchase(purchase)}
-                  className="text-sm text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <PencilLine className="w-4 h-4" />
-                  Edit
-                </button>
-              )}
-            </div>
-            <p className="text-sm text-gray-600 mb-1">
-              Payment: {purchase.paymentMode}
-            </p>
-            <p className="text-sm text-gray-600 mb-1">
-              Discount: ₹{purchase.discount}
-            </p>
-            <p className="text-sm text-gray-600 mb-1">
-              Total: ₹{purchase.totalPrice}
-            </p>
-            <p
-              className={`text-sm font-semibold ${
-                purchase.dueAmount > 0 ? "text-red-600" : "text-green-700"
-              }`}
+        {purchases.map((purchase) => {
+          const istDate = new Date(purchase.date).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          });
+
+          return (
+            <div
+              key={purchase._id}
+              className="border rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition"
             >
-              Due: ₹{purchase.dueAmount}
-            </p>
-            <div className="mt-3">
-              <h3 className="text-sm font-medium text-gray-700 mb-1">
-                Medicines:
-              </h3>
-              <ul className="pl-4 list-disc text-sm text-gray-600">
-                {purchase.medicines.map((med, idx) => (
-                  <li key={idx}>
-                    {med.name} ({med.category}) - {med.quantity} x ₹{med.price}
-                  </li>
-                ))}
-              </ul>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  {purchase.customerName}
+                </h2>
+                {isAdmin && (
+                  <button
+                    onClick={() => setEditPurchase(purchase)}
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <PencilLine className="w-4 h-4" />
+                    Edit
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mb-1">Date: {istDate}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                Payment: {purchase.paymentMode}
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
+                Discount: ₹{purchase.discount}
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
+                Total: ₹{purchase.totalPrice}
+              </p>
+              <p
+                className={`text-sm font-semibold ${
+                  purchase.dueAmount > 0 ? "text-red-600" : "text-green-700"
+                }`}
+              >
+                Due: ₹{purchase.dueAmount}
+              </p>
+              <div className="mt-3">
+                <h3 className="text-sm font-medium text-gray-700 mb-1">
+                  Medicines:
+                </h3>
+                <ul className="pl-4 list-disc text-sm text-gray-600">
+                  {purchase.medicines.map((med, idx) => (
+                    <li key={idx}>
+                      {med.name} ({med.category}) - {med.quantity} x ₹
+                      {med.price}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {isTodaySelected && (
           <div
