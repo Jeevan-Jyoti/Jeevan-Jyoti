@@ -126,7 +126,7 @@ export default function HomePage() {
                 Payment: {purchase.paymentMode}
               </p>
               <p className="text-sm text-gray-600 mb-1">
-                Total: ₹{purchase.totalPrice}
+                Total: ₹{purchase.totalPrice.toFixed(2)}
               </p>
               <p className="text-sm text-gray-600 mb-1">
                 Discount: ₹{purchase.discount}
