@@ -18,7 +18,6 @@ export async function PUT(
       paymentMode,
       dueAmount,
       totalPrice,
-      date,
     } = await req.json();
 
     const existingPurchase = await Customer.findById(purchaseId);
@@ -69,10 +68,6 @@ export async function PUT(
     existingPurchase.totalPrice = totalPrice;
     existingPurchase.paymentMode = paymentMode;
     existingPurchase.dueAmount = dueAmount;
-
-    if (date) {
-      existingPurchase.date = new Date(date);
-    }
 
     await existingPurchase.save();
 

@@ -27,7 +27,6 @@ interface Purchase {
   totalPrice: number;
   dueAmount: number;
   paymentMode: "cash" | "online";
-  date: string;
 }
 
 interface EditPurchaseModalProps {
@@ -131,11 +130,7 @@ export default function EditPurchaseModal({
   const handleSubmit = async () => {
     if (!purchase) return;
 
-    const nowIST = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Kolkata",
-    });
-
-    const updated: Purchase & { date: string } = {
+    const updated: Purchase = {
       ...purchase,
       customerName,
       medicines: medicineList.map((m) => ({
@@ -148,7 +143,6 @@ export default function EditPurchaseModal({
       totalPrice,
       paymentMode,
       dueAmount: parseFloat(dueAmount) || 0,
-      date: nowIST,
     };
 
     try {
