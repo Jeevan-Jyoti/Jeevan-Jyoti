@@ -7,7 +7,20 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const categoryList = ["Tablet", "Injection", "Syrup", "Capsule", "Ointment"];
+const categoryList = [
+  "Tablet",
+  "Injection",
+  "Syrup",
+  "Capsule",
+  "Ointment",
+  "Cream",
+  "IVF",
+  "Bandage",
+  "Powder",
+  "Drops",
+  "Oil",
+  "Others",
+];
 
 export default function AddMedicineModal() {
   const { isOpen, close } = useAddMedicineModal();
