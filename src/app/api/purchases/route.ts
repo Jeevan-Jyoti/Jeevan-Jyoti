@@ -10,13 +10,17 @@ export async function GET(req: NextRequest) {
     const dateParam = req.nextUrl.searchParams.get("date");
     const date = dateParam ? new Date(dateParam) : new Date();
 
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(date);
-    end.setHours(23, 59, 59, 999);
+    const istOffsetMinutes = 330;
+    const utcStart = new Date(date);
+    utcStart.setUTCHours(0, 0, 0, 0);
+    utcStart.setUTCMinutes(utcStart.getUTCMinutes() - istOffsetMinutes);
+
+    const utcEnd = new Date(date);
+    utcEnd.setUTCHours(23, 59, 59, 999);
+    utcEnd.setUTCMinutes(utcEnd.getUTCMinutes() - istOffsetMinutes);
 
     const purchases = await Customer.find({
-      date: { $gte: start, $lte: end },
+      date: { $gte: utcStart, $lte: utcEnd },
     }).sort({ date: -1 });
 
     return NextResponse.json(purchases);
@@ -33,7 +37,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { customerName, medicines, discount, paymentMode, dueAmount } =
+    const { customerName, medicines, discount, paymentMode, dueAmount, date } =
       await req.json();
 
     let totalPrice = 0;
@@ -63,6 +67,8 @@ export async function POST(req: NextRequest) {
       await med.save();
     }
 
+    const purchaseDate = date ? new Date(date) : new Date();
+
     const customer = await Customer.create({
       customerName,
       medicines,
@@ -70,7 +76,7 @@ export async function POST(req: NextRequest) {
       discount,
       paymentMode,
       dueAmount,
-      date: new Date(),
+      date: purchaseDate,
     });
 
     return NextResponse.json({ message: "Purchase added", data: customer });

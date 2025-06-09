@@ -4,7 +4,7 @@ import EditPurchaseModal from "@/components/EditPurchaseModal";
 import { useAddPurchaseModal } from "@/lib/modalStore";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
-import { format, isAfter, isToday } from "date-fns";
+import { format, isAfter, isToday, parseISO } from "date-fns";
 import { PencilLine, PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -58,18 +58,21 @@ export default function HomePage() {
 
   const totalAmountForDay = purchases.reduce((sum, p) => sum + p.totalPrice, 0);
 
-  const istSelectedDate = selectedDate.toLocaleDateString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+  const sortedPurchases = [...purchases].sort((a, b) => {
+    if (a.dueAmount > 0 && b.dueAmount === 0) return -1;
+    if (a.dueAmount === 0 && b.dueAmount > 0) return 1;
+
+    return (
+      new Date(parseISO(b.date)).getTime() -
+      new Date(parseISO(a.date)).getTime()
+    );
   });
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800">
-          Purchases on {istSelectedDate}
+          Purchases on {format(selectedDate, "dd MMM yyyy")}
         </h1>
         <input
           type="date"
@@ -84,28 +87,29 @@ export default function HomePage() {
           className="border px-3 py-1.5 rounded-lg text-sm"
         />
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {purchases.map((purchase) => {
-          const istDate = new Date(purchase.date).toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            year: "numeric",
-            month: "short",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          });
-
+        {sortedPurchases.map((purchase) => {
+          const hasDue = purchase.dueAmount > 0;
           return (
             <div
               key={purchase._id}
-              className="border rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition"
+              className={`border rounded-xl p-4 shadow-sm transition ${
+                hasDue ? "bg-red-50 border-red-300" : "bg-white hover:shadow-md"
+              }`}
             >
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {purchase.customerName}
-                </h2>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h2
+                    className={`text-lg font-semibold ${
+                      hasDue ? "text-red-700" : "text-gray-800"
+                    }`}
+                  >
+                    {purchase.customerName}
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    {format(parseISO(purchase.date), "dd MMM yyyy, hh:mm a")}
+                  </p>
+                </div>
                 {isAdmin && (
                   <button
                     onClick={() => setEditPurchase(purchase)}
@@ -116,7 +120,6 @@ export default function HomePage() {
                   </button>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mb-1">Date: {istDate}</p>
               <p className="text-sm text-gray-600 mb-1">
                 Payment: {purchase.paymentMode}
               </p>
@@ -128,7 +131,7 @@ export default function HomePage() {
               </p>
               <p
                 className={`text-sm font-semibold ${
-                  purchase.dueAmount > 0 ? "text-red-600" : "text-green-700"
+                  hasDue ? "text-red-600" : "text-green-700"
                 }`}
               >
                 Due: ₹{purchase.dueAmount}
@@ -160,13 +163,11 @@ export default function HomePage() {
           </div>
         )}
       </div>
-
       {purchases.length > 0 && (
         <div className="mt-6 text-xl font-semibold text-gray-800 text-right">
           Total Purchase: ₹{totalAmountForDay.toFixed(2)}
         </div>
       )}
-
       <EditPurchaseModal
         isOpen={!!editPurchase}
         onClose={() => setEditPurchase(null)}

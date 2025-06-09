@@ -102,8 +102,13 @@ export default function AddPurchaseModal() {
     const discountNum = parseFloat(discount) || 0;
     const dueAmountNum = parseFloat(dueAmount) || 0;
 
+    const nowIST = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
+
     const purchase = {
       customerName,
+      date: nowIST,
       medicines: medicineList.map((m) => ({
         name: m.name,
         category: m.category,

@@ -30,7 +30,7 @@ const PurchasedMedicineSchema = new Schema<PurchasedMedicine>(
 const CustomerSchema = new Schema<CustomerDocument>(
   {
     customerName: { type: String, required: true },
-    date: { type: Date, default: Date.now },
+    date: { type: Date, required: true },
     medicines: { type: [PurchasedMedicineSchema], required: true },
     totalPrice: { type: Number, required: true },
     discount: { type: Number, required: true },
