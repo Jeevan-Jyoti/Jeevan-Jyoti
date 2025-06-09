@@ -26,11 +26,14 @@ export default function MedicinesPage() {
 
   const isLowStock = (med: Medicine) => {
     const category = med.category.toLowerCase();
-    if (category === "tablet" && med.quantity < 10) return true;
-    if (category === "syrup" && med.quantity < 5) return true;
-    if (category === "injection" && med.quantity < 5) return true;
-    if (category === "capsule" && med.quantity < 10) return true;
+    if (category === "tablet" && med.quantity < 20) return true;
+    if (category === "syrup" && med.quantity < 3) return true;
+    if (category === "injection" && med.quantity < 3) return true;
+    if (category === "capsule" && med.quantity < 20) return true;
     if (category === "ointment" && med.quantity < 3) return true;
+    if (category === "ivf" && med.quantity < 10) return true;
+    if (med.quantity < 2) return true;
+
     return false;
   };
 
