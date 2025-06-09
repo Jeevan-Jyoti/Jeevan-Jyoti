@@ -132,7 +132,8 @@ export default function HomePage() {
                 Discount: ₹{purchase.discount}
               </p>
               <p className="text-sm text-gray-600 mb-1">
-                Amount Paid: ₹{purchase.totalPrice - purchase.discount}
+                Amount Paid: ₹
+                {(purchase.totalPrice - purchase.discount).toFixed(2)}
               </p>
               <p
                 className={`text-sm font-semibold ${
