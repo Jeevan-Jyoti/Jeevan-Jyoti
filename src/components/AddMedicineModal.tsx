@@ -19,6 +19,7 @@ const categoryList = [
   "Powder",
   "Drops",
   "Oil",
+  "Soap",
   "Others",
 ];
 
