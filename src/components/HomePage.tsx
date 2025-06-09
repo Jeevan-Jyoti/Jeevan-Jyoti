@@ -56,7 +56,9 @@ export default function HomePage() {
   const isTodaySelected = isToday(selectedDate);
   const maxDate = format(today, "yyyy-MM-dd");
 
-  const totalAmountForDay = purchases.reduce((sum, p) => sum + p.totalPrice, 0);
+  const totalAmountForDay =
+    purchases.reduce((sum, p) => sum + p.totalPrice, 0) -
+    purchases.reduce((sum, p) => sum + p.discount, 0);
 
   const sortedPurchases = [...purchases].sort((a, b) => {
     if (a.dueAmount > 0 && b.dueAmount === 0) return -1;
@@ -124,10 +126,13 @@ export default function HomePage() {
                 Payment: {purchase.paymentMode}
               </p>
               <p className="text-sm text-gray-600 mb-1">
+                Total: ₹{purchase.totalPrice}
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
                 Discount: ₹{purchase.discount}
               </p>
               <p className="text-sm text-gray-600 mb-1">
-                Total: ₹{purchase.totalPrice}
+                Amount Paid: ₹{purchase.totalPrice - purchase.discount}
               </p>
               <p
                 className={`text-sm font-semibold ${

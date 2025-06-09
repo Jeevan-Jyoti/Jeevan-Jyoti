@@ -294,10 +294,6 @@ export default function AddPurchaseModal() {
                 Finalize Purchase - Step 2
               </h2>
 
-              <p className="text-gray-700 text-sm">
-                <strong>Total Price:</strong> ₹{totalPrice.toFixed(2)}
-              </p>
-
               <input
                 type="number"
                 className="w-full border rounded px-3 py-2"
@@ -324,6 +320,19 @@ export default function AddPurchaseModal() {
                 value={dueAmount}
                 onChange={(e) => setDueAmount(e.target.value)}
               />
+
+              <p className="text-gray-700 text-sm">
+                <strong>Total Price:</strong> ₹{totalPrice.toFixed(2)}
+              </p>
+
+              <p className="text-red-500 text-sm">
+                <strong>Discount:</strong> ₹{discount}
+              </p>
+
+              <p className="text-gray-700 text-sm">
+                <strong>Final Price:</strong> ₹
+                {(totalPrice - parseFloat(discount)).toFixed(2)}
+              </p>
 
               <div className="flex justify-between mt-4">
                 <button
