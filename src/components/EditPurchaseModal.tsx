@@ -4,7 +4,7 @@ import { useMedicineStore } from "@/lib/stores/medicineStore";
 import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import { Trash2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface MedicineEntry {
