@@ -356,7 +356,7 @@ export default function EditPurchaseModal({
                 className="w-full rounded border px-3 py-2"
                 value={discount}
                 min="0"
-                onChange={(e) => setDiscount(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setDiscount(e.target.value)}
               />
 
               <select
