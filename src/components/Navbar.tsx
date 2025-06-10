@@ -27,7 +27,7 @@ const Navbar = () => {
       </Link>
       <button
         onClick={openAddPurchase}
-        className="flex items-center gap-2 hover:text-green-700 cursor-pointer"
+        className="flex cursor-pointer items-center gap-2 hover:text-green-700"
       >
         <PlusCircle size={18} /> Add Purchase
       </button>
@@ -41,7 +41,7 @@ const Navbar = () => {
       {isAdmin && (
         <button
           onClick={openAddMedicine}
-          className="flex items-center gap-2 hover:text-green-700 cursor-pointer"
+          className="flex cursor-pointer items-center gap-2 hover:text-green-700"
         >
           <ShieldPlus size={18} /> Add Data
         </button>
@@ -50,22 +50,22 @@ const Navbar = () => {
   );
 
   return (
-    <nav className="w-full bg-teal-50/60 border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <nav className="w-full border-b border-gray-200 bg-teal-50/60 shadow-sm">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex flex-col">
           <span className="text-2xl font-bold text-green-700">
             Jeevan Jyoti
           </span>
-          <span className="text-sm text-gray-600 -mt-1">Medical Store</span>
+          <span className="-mt-1 text-sm text-gray-600">Medical Store</span>
         </div>
-        <div className="hidden md:flex gap-6 text-gray-700 text-sm md:text-base">
+        <div className="hidden gap-6 text-sm text-gray-700 md:flex md:text-base">
           {navLinks}
         </div>
         <div className="hidden md:block">
           <UserButton afterSignOutUrl="/" />
         </div>
         <button
-          className="md:hidden p-2 cursor-pointer"
+          className="cursor-pointer p-2 md:hidden"
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
         >
@@ -74,11 +74,11 @@ const Navbar = () => {
       </div>
 
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-teal-50 shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 z-50 h-full w-64 transform bg-teal-50 shadow-lg transition-transform duration-300 ease-in-out ${
           menuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between px-4 py-4 border-b">
+        <div className="flex items-center justify-between border-b px-4 py-4">
           <span className="text-lg font-semibold text-green-700">Menu</span>
           <button
             className="cursor-pointer"
@@ -91,7 +91,7 @@ const Navbar = () => {
 
         <div className="flex flex-col gap-4 p-4 text-gray-700">
           {navLinks}
-          <div className="pt-2 border-t">
+          <div className="border-t pt-2">
             <UserButton afterSignOutUrl="/" />
           </div>
         </div>
@@ -100,7 +100,7 @@ const Navbar = () => {
       {menuOpen && (
         <div
           onClick={closeMenu}
-          className="fixed inset-0 bg-black/70 z-40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/70 md:hidden"
         />
       )}
     </nav>

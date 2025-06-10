@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Navbar from "./Navbar";
 
-const allowedUsernames = ["abhay", "clerk-01", "clerk-02"];
+const allowedUsernames = ["abhay", "prince"];
 
 export default function ProtectedPage({
   children,
@@ -34,8 +34,8 @@ export default function ProtectedPage({
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-green-600 border-t-transparent" />
       </div>
     );
   }

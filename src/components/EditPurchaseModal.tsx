@@ -3,8 +3,8 @@
 import { useMedicineStore } from "@/lib/stores/medicineStore";
 import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface MedicineEntry {
@@ -55,6 +55,7 @@ export default function EditPurchaseModal({
   const [discount, setDiscount] = useState("");
   const [paymentMode, setPaymentMode] = useState<"cash" | "online">("cash");
   const [dueAmount, setDueAmount] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -71,7 +72,7 @@ export default function EditPurchaseModal({
           quantity: m.quantity.toString(),
           price: m.price,
           category: m.category,
-        }))
+        })),
       );
       setDiscount(purchase.discount.toString());
       setDueAmount(purchase.dueAmount.toString());
@@ -101,7 +102,7 @@ export default function EditPurchaseModal({
   const suggestions =
     currentMed.name && !medicines.some((m) => m.name === currentMed.name)
       ? medicines.filter((m) =>
-          m.name.toLowerCase().includes(currentMed.name.toLowerCase())
+          m.name.toLowerCase().includes(currentMed.name.toLowerCase()),
         )
       : [];
 
@@ -110,16 +111,56 @@ export default function EditPurchaseModal({
     return sum + qty * m.price;
   }, 0);
 
+  const discountAmount = parseFloat(discount) || 0;
+  const finalAmount = totalPrice - discountAmount;
+
   const handleAddMedicine = () => {
     if (
+      currentMed.quantity.trim() === "" &&
+      currentMed.name !== "" &&
+      currentMed.price > 0
+    ) {
+      const isDuplicate = medicineList.some((m) => m.name === currentMed.name);
+      if (isDuplicate) {
+        toast.warning("Medicine already added");
+        return;
+      }
+      setMedicineList((prev) => [
+        ...prev,
+        {
+          name: currentMed.name,
+          category: currentMed.category,
+          quantity: "1",
+          price: currentMed.price,
+        },
+      ]);
+      setCurrentMed({ name: "", quantity: "", price: 0, category: "" });
+      return;
+    }
+    if (
       !currentMed.name ||
-      currentMed.quantity.trim() === "" ||
       isNaN(parseInt(currentMed.quantity)) ||
-      parseInt(currentMed.quantity) <= 0
+      parseInt(currentMed.quantity) <= 0 ||
+      currentMed.price <= 0
     )
       return;
 
-    setMedicineList([...medicineList, currentMed]);
+    const isDuplicate = medicineList.some((m) => m.name === currentMed.name);
+    if (isDuplicate) {
+      toast.warning("Medicine already added");
+      return;
+    }
+
+    setMedicineList((prev) => [
+      ...prev,
+      {
+        name: currentMed.name,
+        category: currentMed.category,
+        quantity: parseInt(currentMed.quantity) ? currentMed.quantity : "1",
+        price: currentMed.price,
+      },
+    ]);
+
     setCurrentMed({ name: "", quantity: "", price: 0, category: "" });
   };
 
@@ -130,6 +171,7 @@ export default function EditPurchaseModal({
   const handleSubmit = async () => {
     if (!purchase) return;
 
+    setIsLoading(true);
     const updated: Purchase = {
       ...purchase,
       customerName,
@@ -148,9 +190,11 @@ export default function EditPurchaseModal({
     try {
       await axios.put(`/api/purchases/${purchase._id}`, updated);
       toast.success("Purchase updated");
+      setIsLoading(false);
       onUpdate();
       onClose();
     } catch (err) {
+      setIsLoading(false);
       toast.error("Failed to update purchase");
       console.error(err);
     }
@@ -159,13 +203,11 @@ export default function EditPurchaseModal({
   if (!isOpen || !purchase) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-2xl rounded-lg bg-white p-6 shadow-lg">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-gray-500 hover:text-red-500 cursor-pointer"
-          aria-label="Close"
-          title="Close"
+          className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-red-500"
         >
           <X />
         </button>
@@ -184,19 +226,19 @@ export default function EditPurchaseModal({
 
               <input
                 type="text"
-                className="w-full border px-3 py-2 rounded"
+                className="w-full rounded border px-3 py-2"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Customer Name"
               />
 
-              <div className="border p-4 rounded bg-gray-50 space-y-2">
+              <div className="space-y-2 rounded border bg-gray-50 p-4">
                 <h3 className="font-medium text-gray-700">Add Medicine</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <div className="relative col-span-1">
                     <input
                       type="text"
-                      className="w-full border px-3 py-2 rounded"
+                      className="w-full rounded border px-3 py-2"
                       placeholder="Medicine name"
                       value={currentMed.name}
                       onChange={(e) =>
@@ -205,17 +247,16 @@ export default function EditPurchaseModal({
                       autoComplete="off"
                     />
                     {suggestions.length > 0 && (
-                      <ul className="absolute bg-white border z-50 rounded mt-1 max-h-32 overflow-y-auto text-sm shadow w-full">
+                      <ul className="absolute z-50 mt-1 max-h-28 w-full overflow-y-auto rounded border bg-white text-sm shadow-lg">
                         {suggestions.slice(0, 5).map((m, idx) => (
                           <li
                             key={idx}
-                            className="px-3 py-1 hover:bg-gray-100 cursor-pointer"
+                            className="cursor-pointer px-3 py-1 hover:bg-gray-100"
                             onClick={() =>
                               setCurrentMed({
+                                ...currentMed,
                                 name: m.name,
                                 quantity: "",
-                                price: m.price,
-                                category: m.category,
                               })
                             }
                           >
@@ -228,8 +269,8 @@ export default function EditPurchaseModal({
 
                   <input
                     type="text"
+                    className="rounded border px-3 py-2"
                     placeholder="Quantity"
-                    className="border px-3 py-2 rounded"
                     value={currentMed.quantity}
                     onChange={(e) =>
                       setCurrentMed({
@@ -241,7 +282,7 @@ export default function EditPurchaseModal({
 
                   <input
                     type="text"
-                    className="border px-3 py-2 rounded bg-gray-200"
+                    className="cursor-not-allowed rounded border bg-gray-200 px-3 py-2"
                     placeholder="Price"
                     value={currentMed.price.toFixed(2)}
                     disabled
@@ -249,39 +290,48 @@ export default function EditPurchaseModal({
                 </div>
 
                 <button
+                  className="mt-2 cursor-pointer rounded bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700"
                   onClick={handleAddMedicine}
-                  className="mt-2 px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 text-sm cursor-pointer"
                 >
                   Add Medicine
                 </button>
               </div>
 
               {medicineList.length > 0 && (
-                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
-                  {medicineList.map((m, i) => (
-                    <li key={i} className="flex justify-between items-center">
-                      <span>
-                        {m.name} ({m.category}) - {m.quantity} × ₹
-                        {m.price.toFixed(2)} = ₹
-                        {(parseInt(m.quantity) * m.price).toFixed(2)}
-                      </span>
-                      <button
-                        onClick={() => handleRemoveMedicine(i)}
-                        className="text-red-600 hover:underline text-xs ml-3 cursor-pointer"
-                        aria-label={`Remove ${m.name}`}
-                        title={`Remove ${m.name}`}
+                <div className="text-sm text-gray-700">
+                  <h4 className="mt-3 font-medium">Medicines Added:</h4>
+                  <ul className="mt-1 space-y-1">
+                    {medicineList.map((med, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center justify-between rounded border p-2"
                       >
-                        Remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        <span>
+                          {med.name} ({med.category}) - {med.quantity} × ₹
+                          {med.price.toFixed(2)} = ₹
+                          {(parseInt(med.quantity) * med.price).toFixed(2)}
+                        </span>
+                        <button
+                          className="ml-2 cursor-pointer text-red-500 hover:text-red-700"
+                          onClick={() => handleRemoveMedicine(i)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
-              <div className="flex justify-end mt-2">
+              <div className="mt-2 flex justify-end">
                 <button
+                  className={`cursor-pointer rounded px-4 py-2 text-white ${
+                    medicineList.length === 0 || customerName === ""
+                      ? "cursor-not-allowed bg-gray-400"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                  disabled={medicineList.length === 0 || customerName === ""}
                   onClick={() => setStep(2)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
                 >
                   Next
                 </button>
@@ -300,20 +350,17 @@ export default function EditPurchaseModal({
             >
               <h2 className="text-lg font-semibold">Finalize Edit</h2>
 
-              <p className="text-gray-700">
-                <strong>Total:</strong> ₹{totalPrice.toFixed(2)}
-              </p>
-
               <input
                 type="number"
                 placeholder="Discount"
-                className="w-full border px-3 py-2 rounded"
+                className="w-full rounded border px-3 py-2"
                 value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
+                min="0"
+                onChange={(e) => setDiscount(e.target.value.replace(/\D/g, ""))}
               />
 
               <select
-                className="w-full border px-3 py-2 rounded"
+                className="w-full rounded border px-3 py-2"
                 value={paymentMode}
                 onChange={(e) =>
                   setPaymentMode(e.target.value as "cash" | "online")
@@ -326,21 +373,39 @@ export default function EditPurchaseModal({
               <input
                 type="number"
                 placeholder="Due Amount"
-                className="w-full border px-3 py-2 rounded"
+                className="w-full rounded border px-3 py-2"
                 value={dueAmount}
-                onChange={(e) => setDueAmount(e.target.value)}
+                min="0"
+                onChange={(e) =>
+                  setDueAmount(e.target.value.replace(/\D/g, ""))
+                }
               />
 
-              <div className="flex justify-between mt-4">
+              <p className="text-gray-700">
+                <strong>Subtotal:</strong> ₹{totalPrice.toFixed(2)}
+              </p>
+              <p className="text-gray-700">
+                <strong>Discount:</strong> ₹{discountAmount.toFixed(2)}
+              </p>
+              <p className="text-lg font-semibold text-green-700">
+                <strong>Total After Discount:</strong> ₹{finalAmount.toFixed(2)}
+              </p>
+
+              <div className="mt-4 flex justify-between">
                 <button
                   onClick={() => setStep(1)}
-                  className="px-4 py-2 rounded border hover:bg-gray-100 cursor-pointer"
+                  className="cursor-pointer rounded border px-4 py-2 hover:bg-gray-100"
                 >
                   Back
                 </button>
                 <button
+                  disabled={isLoading}
                   onClick={handleSubmit}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
+                  className={`cursor-pointer rounded px-4 py-2 text-white ${
+                    isLoading
+                      ? "bg-green-300"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
                 >
                   Save Changes
                 </button>

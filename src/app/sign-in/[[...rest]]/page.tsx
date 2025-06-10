@@ -4,12 +4,12 @@ import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <div className="w-full max-w-md p-6 bg-white shadow-lg rounded-2xl">
-        <h1 className="text-2xl font-bold text-center text-green-700 mb-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg">
+        <h1 className="mb-4 text-center text-2xl font-bold text-green-700">
           Welcome to Jeevan Jyoti
         </h1>
-        <p className="text-sm text-center text-gray-600 mb-6">
+        <p className="mb-6 text-center text-sm text-gray-600">
           Please sign in to access the medical store dashboard
         </p>
         <SignIn

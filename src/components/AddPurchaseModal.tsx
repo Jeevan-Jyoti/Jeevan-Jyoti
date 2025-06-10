@@ -2,9 +2,10 @@
 
 import { useAddPurchaseModal } from "@/lib/modalStore";
 import { useMedicineStore } from "@/lib/stores/medicineStore";
+import { usePurchaseStore } from "@/lib/stores/purchaseStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type MedicineEntry = {
@@ -17,6 +18,7 @@ type MedicineEntry = {
 export default function AddPurchaseModal() {
   const { isOpen, close } = useAddPurchaseModal();
   const { medicines, fetchAllMedicines } = useMedicineStore();
+  const { fetchAllPurchases } = usePurchaseStore();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [customerName, setCustomerName] = useState("");
@@ -24,6 +26,7 @@ export default function AddPurchaseModal() {
   const [discount, setDiscount] = useState("");
   const [paymentMode, setPaymentMode] = useState<"cash" | "online">("cash");
   const [dueAmount, setDueAmount] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [currentMed, setCurrentMed] = useState({
     name: "",
@@ -32,7 +35,12 @@ export default function AddPurchaseModal() {
     category: "",
   });
 
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
+    if (isOpen && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
     if (isOpen) fetchAllMedicines();
   }, [isOpen, fetchAllMedicines]);
 
@@ -52,7 +60,7 @@ export default function AddPurchaseModal() {
   const suggestions =
     currentMed.name && !medicines.some((m) => m.name === currentMed.name)
       ? medicines.filter((m) =>
-          m.name.toLowerCase().includes(currentMed.name.toLowerCase())
+          m.name.toLowerCase().includes(currentMed.name.toLowerCase()),
         )
       : [];
 
@@ -60,6 +68,9 @@ export default function AddPurchaseModal() {
     const qty = parseInt(m.quantity) || 0;
     return sum + qty * m.price;
   }, 0);
+
+  const discountAmount = parseFloat(discount) || 0;
+  const finalAmount = totalPrice - discountAmount;
 
   const resetForm = () => {
     setStep(1);
@@ -73,20 +84,47 @@ export default function AddPurchaseModal() {
 
   const handleAddMedicine = () => {
     if (
+      currentMed.quantity.trim() === "" &&
+      currentMed.name !== "" &&
+      currentMed.price > 0
+    ) {
+      const isDuplicate = medicineList.some((m) => m.name === currentMed.name);
+      if (isDuplicate) {
+        toast.warning("Medicine already added");
+        return;
+      }
+      setMedicineList((prev) => [
+        ...prev,
+        {
+          name: currentMed.name,
+          category: currentMed.category,
+          quantity: "1",
+          price: currentMed.price,
+        },
+      ]);
+      setCurrentMed({ name: "", quantity: "", price: 0, category: "" });
+      return;
+    }
+    if (
       !currentMed.name ||
-      currentMed.quantity.trim() === "" ||
       isNaN(parseInt(currentMed.quantity)) ||
       parseInt(currentMed.quantity) <= 0 ||
-      currentMed.price < 0
+      currentMed.price <= 0
     )
       return;
+
+    const isDuplicate = medicineList.some((m) => m.name === currentMed.name);
+    if (isDuplicate) {
+      toast.warning("Medicine already added");
+      return;
+    }
 
     setMedicineList((prev) => [
       ...prev,
       {
         name: currentMed.name,
         category: currentMed.category,
-        quantity: currentMed.quantity,
+        quantity: parseInt(currentMed.quantity) ? currentMed.quantity : "1",
         price: currentMed.price,
       },
     ]);
@@ -98,12 +136,22 @@ export default function AddPurchaseModal() {
     setMedicineList((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const hasUnsavedData = customerName || medicineList.length > 0;
+
+  const handleClose = () => {
+    if (hasUnsavedData && !confirm("Are you sure you want to discard changes?"))
+      return;
+    resetForm();
+    close();
+  };
+
   const handleSubmit = async () => {
+    setIsLoading(true);
     const discountNum = parseFloat(discount) || 0;
     const dueAmountNum = parseFloat(dueAmount) || 0;
 
     const nowIST = new Date(
-      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
     );
 
     const purchase = {
@@ -136,9 +184,12 @@ export default function AddPurchaseModal() {
 
       toast.success("Saved successfully");
       await fetchAllMedicines();
+      await fetchAllPurchases();
       resetForm();
+      setIsLoading(false);
       close();
     } catch (e) {
+      setIsLoading(false);
       console.error("Error submitting purchase:", e);
       toast.error("Something went wrong.");
     }
@@ -147,16 +198,13 @@ export default function AddPurchaseModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full p-6 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="relative w-full max-w-2xl rounded-lg bg-white p-6">
         <button
-          className="absolute right-4 top-4 text-gray-500 hover:text-red-500 cursor-pointer"
-          onClick={() => {
-            close();
-            resetForm();
-          }}
+          className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-red-500"
+          onClick={handleClose}
         >
-          <X className="w-5 h-5" />
+          <X className="h-5 w-5" />
         </button>
 
         <AnimatePresence mode="wait">
@@ -173,19 +221,20 @@ export default function AddPurchaseModal() {
 
               <input
                 type="text"
-                className="w-full border rounded px-3 py-2"
+                ref={nameInputRef}
+                className="w-full rounded border px-3 py-2"
                 placeholder="Enter customer name"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
 
-              <div className="border p-4 rounded bg-gray-50 space-y-2">
+              <div className="space-y-2 rounded border bg-gray-50 p-4">
                 <h3 className="font-medium text-gray-700">Add Medicine</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <div className="relative col-span-1">
                     <input
                       type="text"
-                      className="border px-3 py-2 rounded w-full"
+                      className="w-full rounded border px-3 py-2"
                       placeholder="Medicine name"
                       value={currentMed.name}
                       onChange={(e) =>
@@ -194,11 +243,11 @@ export default function AddPurchaseModal() {
                       autoComplete="off"
                     />
                     {suggestions.length > 0 && (
-                      <ul className="absolute z-50 bg-white border mt-1 rounded text-sm max-h-28 overflow-y-auto shadow-lg w-full">
+                      <ul className="absolute z-50 mt-1 max-h-28 w-full overflow-y-auto rounded border bg-white text-sm shadow-lg">
                         {suggestions.slice(0, 5).map((m, idx) => (
                           <li
                             key={idx}
-                            className="px-3 py-1 hover:bg-gray-100 cursor-pointer"
+                            className="cursor-pointer px-3 py-1 hover:bg-gray-100"
                             onClick={() =>
                               setCurrentMed({
                                 ...currentMed,
@@ -216,7 +265,7 @@ export default function AddPurchaseModal() {
 
                   <input
                     type="text"
-                    className="border px-3 py-2 rounded"
+                    className="rounded border px-3 py-2"
                     placeholder="Quantity"
                     value={currentMed.quantity}
                     onChange={(e) =>
@@ -229,7 +278,7 @@ export default function AddPurchaseModal() {
 
                   <input
                     type="text"
-                    className="border px-3 py-2 rounded bg-gray-200 cursor-not-allowed"
+                    className="cursor-not-allowed rounded border bg-gray-200 px-3 py-2"
                     placeholder="Price"
                     value={currentMed.price.toFixed(2)}
                     disabled
@@ -237,7 +286,7 @@ export default function AddPurchaseModal() {
                 </div>
 
                 <button
-                  className="text-sm bg-green-600 text-white px-3 py-1 rounded mt-2 hover:bg-green-700 cursor-pointer"
+                  className="mt-2 cursor-pointer rounded bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700"
                   onClick={handleAddMedicine}
                 >
                   Add Medicine
@@ -246,12 +295,12 @@ export default function AddPurchaseModal() {
 
               {medicineList.length > 0 && (
                 <div className="text-sm text-gray-700">
-                  <h4 className="font-medium mt-3">Medicines Added:</h4>
+                  <h4 className="mt-3 font-medium">Medicines Added:</h4>
                   <ul className="mt-1 space-y-1">
                     {medicineList.map((med, i) => (
                       <li
                         key={i}
-                        className="flex items-center justify-between border p-2 rounded"
+                        className="flex items-center justify-between rounded border p-2"
                       >
                         <span>
                           {med.name} ({med.category}) - {med.quantity} × ₹
@@ -259,10 +308,10 @@ export default function AddPurchaseModal() {
                           {(parseInt(med.quantity) * med.price).toFixed(2)}
                         </span>
                         <button
-                          className="text-red-500 hover:text-red-700 ml-2 cursor-pointer"
+                          className="ml-2 cursor-pointer text-red-500 hover:text-red-700"
                           onClick={() => handleRemoveMedicine(i)}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </li>
                     ))}
@@ -270,14 +319,17 @@ export default function AddPurchaseModal() {
                 </div>
               )}
 
-              <div className="flex justify-end">
-                <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer"
-                  onClick={() => setStep(2)}
-                >
-                  Next
-                </button>
-              </div>
+              <button
+                className={`cursor-pointer rounded px-4 py-2 text-white ${
+                  medicineList.length === 0 || customerName === ""
+                    ? "cursor-not-allowed bg-gray-400"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+                disabled={medicineList.length === 0 || customerName === ""}
+                onClick={() => setStep(2)}
+              >
+                Next
+              </button>
             </motion.div>
           )}
 
@@ -296,14 +348,14 @@ export default function AddPurchaseModal() {
 
               <input
                 type="number"
-                className="w-full border rounded px-3 py-2"
+                className="w-full rounded border px-3 py-2"
                 placeholder="Discount (₹)"
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
               />
 
               <select
-                className="w-full border rounded px-3 py-2"
+                className="w-full rounded border px-3 py-2"
                 value={paymentMode}
                 onChange={(e) =>
                   setPaymentMode(e.target.value as "cash" | "online")
@@ -315,37 +367,42 @@ export default function AddPurchaseModal() {
 
               <input
                 type="number"
-                className="w-full border rounded px-3 py-2"
-                placeholder="Due Amount (₹)"
+                className="w-full rounded border px-3 py-2"
+                placeholder="Due amount after payment (₹)"
                 value={dueAmount}
                 onChange={(e) => setDueAmount(e.target.value)}
               />
 
-              <p className="text-gray-700 text-sm">
-                <strong>Total Price:</strong> ₹{totalPrice.toFixed(2)}
+              <p className="text-gray-700">
+                <strong>Subtotal:</strong> ₹{totalPrice.toFixed(2)}
+              </p>
+              <p className="text-gray-700">
+                <strong>Discount:</strong> ₹{discountAmount.toFixed(2)}
+              </p>
+              <p className="text-lg font-semibold text-green-700">
+                <strong>Total After Discount:</strong> ₹{finalAmount.toFixed(2)}
               </p>
 
-              <p className="text-red-500 text-sm">
-                <strong>Discount:</strong> ₹{discount}
-              </p>
-
-              <p className="text-gray-700 text-sm">
-                <strong>Final Price:</strong> ₹
-                {(totalPrice - parseFloat(discount)).toFixed(2)}
-              </p>
-
-              <div className="flex justify-between mt-4">
+              <div className="mt-4 flex justify-between">
                 <button
-                  className="px-4 py-2 border border-gray-400 rounded text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  className="cursor-pointer rounded border border-gray-400 px-4 py-2 text-gray-700 hover:bg-gray-100"
                   onClick={() => setStep(1)}
                 >
                   Back
                 </button>
 
                 <button
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 cursor-pointer"
+                  disabled={isLoading}
+                  className={`flex cursor-pointer items-center justify-center gap-2 rounded px-4 py-2 text-white ${
+                    isLoading
+                      ? "bg-green-300"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
                   onClick={handleSubmit}
                 >
+                  {isLoading ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-t-2 border-white" />
+                  ) : null}
                   Submit
                 </button>
               </div>

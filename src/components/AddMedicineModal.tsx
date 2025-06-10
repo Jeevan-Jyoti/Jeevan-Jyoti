@@ -42,8 +42,8 @@ export default function AddMedicineModal() {
     } else {
       setSuggestions(
         allMedicines.filter((m) =>
-          m.name.toLowerCase().includes(name.toLowerCase())
-        )
+          m.name.toLowerCase().includes(name.toLowerCase()),
+        ),
       );
     }
   }, [name, allMedicines]);
@@ -53,7 +53,7 @@ export default function AddMedicineModal() {
       setCategorySuggestions([]);
     } else {
       const filtered = categoryList.filter((cat) =>
-        cat.toLowerCase().includes(category.toLowerCase())
+        cat.toLowerCase().includes(category.toLowerCase()),
       );
       setCategorySuggestions(filtered);
     }
@@ -63,14 +63,20 @@ export default function AddMedicineModal() {
     setName(med.name);
     setCategory(med.category);
     setPrice(med.price.toString());
-    setSuggestions([]);
-    setCategorySuggestions([]);
+
+    setTimeout(() => {
+      setSuggestions([]);
+      setCategorySuggestions([]);
+    }, 0);
   };
 
   const handleCategoryClick = (cat: string) => {
     setCategory(cat);
-    setCategorySuggestions([]);
-    setSuggestions([]);
+
+    setTimeout(() => {
+      setCategorySuggestions([]);
+      setSuggestions([]);
+    }, 0);
   };
 
   const resetForm = () => {
@@ -123,37 +129,37 @@ export default function AddMedicineModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow w-full max-w-md relative z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="relative z-50 w-full max-w-md rounded-xl bg-white p-6 shadow">
         <button
           onClick={() => {
             resetForm();
             close();
           }}
-          className="absolute top-3 right-3 text-gray-600 hover:text-black cursor-pointer text-lg"
+          className="absolute top-3 right-3 cursor-pointer text-lg text-gray-600 hover:text-black"
         >
           ✕
         </button>
-        <h2 className="text-lg font-semibold mb-4 text-gray-800">
+        <h2 className="mb-4 text-lg font-semibold text-gray-800">
           Add or Update Medicine
         </h2>
-        <div className="space-y-4 relative">
+        <div className="relative space-y-4">
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700">
               Name
             </label>
             <input
-              className="w-full mt-1 border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="mt-1 w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
             {suggestions.length > 0 && (
-              <div className="absolute top-full left-0 w-full border rounded-lg shadow bg-white mt-1 max-h-40 overflow-auto z-50">
+              <div className="absolute top-full left-0 z-50 mt-1 max-h-40 w-full overflow-auto rounded-lg border bg-white shadow">
                 {suggestions.map((med, idx) => (
                   <div
                     key={idx}
                     onClick={() => handleSuggestionClick(med)}
-                    className="px-3 py-2 cursor-pointer hover:bg-gray-100"
+                    className="cursor-pointer px-3 py-2 hover:bg-gray-100"
                   >
                     {med.name}
                   </div>
@@ -166,17 +172,17 @@ export default function AddMedicineModal() {
               Category
             </label>
             <input
-              className="w-full mt-1 border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="mt-1 w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             />
             {categorySuggestions.length > 0 && (
-              <div className="absolute top-full left-0 w-full border rounded-lg shadow bg-white mt-1 max-h-40 overflow-auto z-50">
+              <div className="absolute top-full left-0 z-50 mt-1 max-h-40 w-full overflow-auto rounded-lg border bg-white shadow">
                 {categorySuggestions.map((cat, idx) => (
                   <div
                     key={idx}
                     onClick={() => handleCategoryClick(cat)}
-                    className="px-3 py-2 cursor-pointer hover:bg-gray-100"
+                    className="cursor-pointer px-3 py-2 hover:bg-gray-100"
                   >
                     {cat}
                   </div>
@@ -190,7 +196,7 @@ export default function AddMedicineModal() {
             </label>
             <input
               type="number"
-              className="w-full mt-1 border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="mt-1 w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               min={0}
@@ -202,7 +208,7 @@ export default function AddMedicineModal() {
             </label>
             <input
               type="number"
-              className="w-full mt-1 border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="mt-1 w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               min={0}
@@ -211,10 +217,10 @@ export default function AddMedicineModal() {
           <button
             onClick={handleSubmit}
             disabled={!isFormValid || loading}
-            className={`w-full py-2 rounded-lg text-white font-semibold transition ${
+            className={`w-full rounded-lg py-2 font-semibold text-white transition ${
               !isFormValid || loading
-                ? "bg-green-400 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700 cursor-pointer"
+                ? "cursor-not-allowed bg-green-400"
+                : "cursor-pointer bg-green-600 hover:bg-green-700"
             }`}
           >
             {loading ? "Saving..." : "Save"}
