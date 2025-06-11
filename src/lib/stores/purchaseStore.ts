@@ -21,16 +21,17 @@ export interface Purchase {
 
 interface PurchaseStore {
   purchases: Purchase[];
-  fetchAllPurchases: () => Promise<void>;
+  fetchAllPurchases: (date?: string) => Promise<void>;
   setPurchases: (data: Purchase[]) => void;
 }
 
 export const usePurchaseStore = create<PurchaseStore>((set) => ({
   purchases: [],
 
-  fetchAllPurchases: async () => {
+  fetchAllPurchases: async (date?: string) => {
     try {
-      const res = await axios.get("/api/purchases");
+      const url = date ? `/api/purchases?date=${date}` : "/api/purchases";
+      const res = await axios.get(url);
       set({ purchases: res.data });
     } catch (err) {
       console.error("Failed to fetch purchases", err);

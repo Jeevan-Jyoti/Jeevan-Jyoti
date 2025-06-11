@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching purchases:", error);
     return NextResponse.json(
       { error: "Failed to fetch purchases", details: error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       if (!med) {
         return NextResponse.json(
           { error: `Medicine ${item.name} not found` },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
           {
             error: `Not enough stock for ${item.name}. Available: ${med.quantity}`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating purchase:", error);
     return NextResponse.json(
       { error: "Internal Server Error", details: error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

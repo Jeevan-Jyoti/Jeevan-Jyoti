@@ -52,12 +52,12 @@ const Navbar = () => {
   return (
     <nav className="w-full border-b border-gray-200 bg-teal-50/60 shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <div className="flex flex-col">
+        <Link href="/" className="flex cursor-pointer flex-col">
           <span className="text-2xl font-bold text-green-700">
             Jeevan Jyoti
           </span>
           <span className="-mt-1 text-sm text-gray-600">Medical Store</span>
-        </div>
+        </Link>
         <div className="hidden gap-6 text-sm text-gray-700 md:flex md:text-base">
           {navLinks}
         </div>

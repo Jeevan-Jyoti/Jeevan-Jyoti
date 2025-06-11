@@ -3,20 +3,15 @@
 import EditPurchaseModal from "@/components/EditPurchaseModal";
 import { useAddPurchaseModal } from "@/lib/modalStore";
 import { Purchase, usePurchaseStore } from "@/lib/stores/purchaseStore";
-import { useUser } from "@clerk/nextjs";
 import { format, isAfter, isToday, parseISO } from "date-fns";
 import { PencilLine, PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function HomePage() {
-  const { user } = useUser();
   const { open: openAddPurchase } = useAddPurchaseModal();
-  const isAdmin = user?.username === "abhay";
-
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [editPurchase, setEditPurchase] = useState<Purchase | null>(null);
-
   const { purchases, fetchAllPurchases } = usePurchaseStore();
 
   const today = new Date();
@@ -26,22 +21,17 @@ export default function HomePage() {
   useEffect(() => {
     const loadPurchases = async () => {
       try {
-        await fetchAllPurchases();
+        const dateStr = format(selectedDate, "yyyy-MM-dd");
+        await fetchAllPurchases(dateStr);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load purchases");
       }
     };
     loadPurchases();
-  }, []);
+  }, [selectedDate]);
 
-  const filteredPurchases = purchases.filter(
-    (p) =>
-      format(parseISO(p.date), "yyyy-MM-dd") ===
-      format(selectedDate, "yyyy-MM-dd"),
-  );
-
-  const sortedPurchases = [...filteredPurchases].sort((a, b) => {
+  const sortedPurchases = [...purchases].sort((a, b) => {
     if (a.dueAmount > 0 && b.dueAmount === 0) return -1;
     if (a.dueAmount === 0 && b.dueAmount > 0) return 1;
     return (
@@ -96,15 +86,13 @@ export default function HomePage() {
                     {format(parseISO(purchase.date), "dd MMM yyyy, hh:mm a")}
                   </p>
                 </div>
-                {isAdmin && (
-                  <button
-                    onClick={() => setEditPurchase(purchase)}
-                    className="flex cursor-pointer items-center gap-1 text-sm text-blue-600 hover:underline"
-                  >
-                    <PencilLine className="h-4 w-4" />
-                    Edit
-                  </button>
-                )}
+                <button
+                  onClick={() => setEditPurchase(purchase)}
+                  className="flex cursor-pointer items-center gap-1 text-sm text-blue-600 hover:underline"
+                >
+                  <PencilLine className="h-4 w-4" />
+                  Edit
+                </button>
               </div>
               <p className="mb-1 text-sm text-gray-600">
                 Payment: {purchase.paymentMode}
@@ -162,7 +150,7 @@ export default function HomePage() {
         isOpen={!!editPurchase}
         onClose={() => setEditPurchase(null)}
         purchase={editPurchase}
-        onUpdate={fetchAllPurchases}
+        onUpdate={() => fetchAllPurchases(format(selectedDate, "yyyy-MM-dd"))}
       />
     </div>
   );

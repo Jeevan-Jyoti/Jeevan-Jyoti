@@ -45,6 +45,9 @@ export default function EditPurchaseModal({
   const { medicines, fetchAllMedicines } = useMedicineStore();
   const [step, setStep] = useState<1 | 2>(1);
   const [customerName, setCustomerName] = useState("");
+  const [originalMedicineNames, setOriginalMedicineNames] = useState<string[]>(
+    [],
+  );
   const [medicineList, setMedicineList] = useState<MedicineEntry[]>([]);
   const [currentMed, setCurrentMed] = useState<MedicineEntry>({
     name: "",
@@ -66,14 +69,14 @@ export default function EditPurchaseModal({
   useEffect(() => {
     if (purchase) {
       setCustomerName(purchase.customerName);
-      setMedicineList(
-        purchase.medicines.map((m) => ({
-          name: m.name,
-          quantity: m.quantity.toString(),
-          price: m.price,
-          category: m.category,
-        })),
-      );
+      const mapped = purchase.medicines.map((m) => ({
+        name: m.name,
+        quantity: m.quantity.toString(),
+        price: m.price,
+        category: m.category,
+      }));
+      setMedicineList(mapped);
+      setOriginalMedicineNames(mapped.map((m) => m.name));
       setDiscount(purchase.discount.toString());
       setDueAmount(purchase.dueAmount.toString());
       setPaymentMode(purchase.paymentMode);
@@ -311,12 +314,14 @@ export default function EditPurchaseModal({
                           {med.price.toFixed(2)} = ₹
                           {(parseInt(med.quantity) * med.price).toFixed(2)}
                         </span>
-                        <button
-                          className="ml-2 cursor-pointer text-red-500 hover:text-red-700"
-                          onClick={() => handleRemoveMedicine(i)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {!originalMedicineNames.includes(med.name) && (
+                          <button
+                            className="ml-2 cursor-pointer text-red-500 hover:text-red-700"
+                            onClick={() => handleRemoveMedicine(i)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -376,9 +381,7 @@ export default function EditPurchaseModal({
                 className="w-full rounded border px-3 py-2"
                 value={dueAmount}
                 min="0"
-                onChange={(e) =>
-                  setDueAmount(e.target.value.replace(/\D/g, ""))
-                }
+                onChange={(e) => setDueAmount(e.target.value)}
               />
 
               <p className="text-gray-700">
